@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通讯录管理系统</title>
+    
+    <!-- Font Awesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 样式文件 -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-address-book"></i> 通讯录管理系统</h1>
+                <p class="subtitle">联系人信息管理</p>
+            </div>
+        </header>
+
+        <!-- 操作栏 -->
+        <section class="toolbar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="搜索姓名或电话号码...">
+            </div>
+            <div class="toolbar-actions">
+                <button class="btn btn-filter" id="filterFavoriteBtn" title="只看收藏">
+                    <i class="fas fa-star"></i> 收藏
+                </button>
+                <button class="btn btn-success" id="exportBtn">
+                    <i class="fas fa-download"></i> 导出
+                </button>
+                <button class="btn btn-info" id="importBtn">
+                    <i class="fas fa-upload"></i> 导入
+                </button>
+                <button class="btn btn-primary" id="addBtn">
+                    <i class="fas fa-plus"></i> 新增联系人
+                </button>
+            </div>
+        </section>
+
+        <!-- 联系人列表 -->
+        <section class="contacts-section">
+            <div class="contacts-header">
+                <h2>联系人列表</h2>
+                <span class="count" id="contactCount">共 0 人</span>
+            </div>
+            
+            <div class="contacts-list" id="contactsList">
+                <!-- 联系人卡片将通过JavaScript动态生成 -->
+            </div>
+            
+            <!-- 空状态 -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <i class="fas fa-address-book"></i>
+                <p>暂无联系人</p>
+                <p class="hint">点击"新增联系人"按钮添加第一个联系人</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- 模态框：新增/编辑联系人 -->
+    <div class="modal" id="contactModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">新增联系人</h2>
+                <button class="close-btn" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="contactForm">
+                <input type="hidden" id="contactId">
+                
+                <div class="form-group">
+                    <label for="name">
+                        <i class="fas fa-user"></i> 姓名 <span class="required">*</span>
+                    </label>
+                    <input type="text" id="name" required placeholder="请输入姓名">
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone">
+                        <i class="fas fa-phone"></i> 电话号码 <span class="required">*</span>
+                    </label>
+                    <input type="tel" id="phone" required placeholder="请输入11位手机号码" pattern="1[3-9]\d{9}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">
+                        <i class="fas fa-envelope"></i> 邮箱
+                    </label>
+                    <input type="email" id="email" placeholder="请输入邮箱地址">
+                </div>
+                
+                <div class="form-group">
+                    <label for="address">
+                        <i class="fas fa-map-marker-alt"></i> 地址
+                    </label>
+                    <input type="text" id="address" placeholder="请输入地址">
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">
+                        <i class="fas fa-sticky-note"></i> 备注
+                    </label>
+                    <textarea id="notes" rows="3" placeholder="请输入备注信息"></textarea>
+                </div>
+                
+                <!-- 额外联系方式 -->
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-address-card"></i> 额外联系方式
+                    </label>
+                    <div id="extraContactMethods">
+                        <!-- 动态添加的联系方式 -->
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="addMethodBtn">
+                        <i class="fas fa-plus"></i> 添加联系方式
+                    </button>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">取消</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-save"></i> 保存
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 确认删除模态框 -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>确认删除</h2>
+                <button class="close-btn" id="closeDeleteModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="warning-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <p>确定要删除联系人 <strong id="deleteContactName"></strong> 吗？</p>
+                <p class="hint">此操作不可恢复</p>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> 确认删除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载提示 -->
+    <div class="loading" id="loading" style="display: none;">
+        <div class="loading-content">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>加载中...</p>
+        </div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- 导入文件模态框 -->
+    <div class="modal" id="importModal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>导入通讯录</h2>
+                <button class="close-btn" id="closeImportModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <p class="hint">请选择CSV或Excel文件（支持.csv, .xls, .xlsx格式）</p>
+                <p class="hint">文件格式：ID, 姓名, 主电话, 主邮箱, 地址, 备注, 是否收藏</p>
+                <input type="file" id="importFileInput" accept=".csv,.xls,.xlsx" style="margin-top: 15px;">
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="cancelImportBtn">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmImportBtn">
+                    <i class="fas fa-upload"></i> 开始导入
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐藏的文件输入 -->
+    <input type="file" id="hiddenFileInput" accept=".csv,.xls,.xlsx" style="display: none;">
+
+    <!-- 配置文件 - API地址配置 -->
+    <script src="js/config.js"></script>
+    <!-- JavaScript文件 -->
+    <script src="js/app.js"></script>
+</body>
+</html>
+
